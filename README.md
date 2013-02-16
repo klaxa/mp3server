@@ -73,5 +73,7 @@ TODO
 ----
 
 - Add Icy-Metadata support
+- Proper logging support
+- HTML status page
 - Add multiple re-stream encodings (other bitrate mp3, vorbis, opus)
 - Add multiple input-stream decodings (flac, vorbis, opus)
