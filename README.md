@@ -7,7 +7,7 @@ That's about what it is.
 Usage
 -----
 
-As of now there are no command line options, all it does at the moment, is open a listening socket on port 8080 and take the first client that connects to that socket as a source for an mp3-stream. Every other client connecting after the first one is considered a normal client, i.e. the stream is being sent to them. IPv6 is supported (thanks Sean\_McG), if you have IPv6 disabled in your kernel, change the #define IPv6 1 to #define IPv6 0 in server.c.
+As of now there are no command line options, all it does at the moment, is open a listening socket on port 8080 and take the first client that connects to that socket as a source for an mp3-stream. Every other client connecting after the first one is considered a normal client, i.e. the stream is being sent to them. IPv6 is supported (thanks Sean_McG), if you have IPv6 disabled in your kernel, change the #define IPv6 1 to #define IPv6 0 in server.c.
 
 Why would you do that if there are already things like icecast?
 ---------------------------------------------------------------
@@ -28,9 +28,9 @@ listening to, because it became a habit of mine to do so.
 
 ```
 *	klaxa is listening to millie - Dreaming Forest
-<Sean\_McG>    klaxa: you play good music -- do you stream it at all?
+<Sean_McG>    klaxa: you play good music -- do you stream it at all?
 <klaxa>	    no, should i?
-*	Sean\_McG would listen to it
+*	Sean_McG would listen to it
 <klaxa>       it wouldn't be up all the time, but i guess i can set something up
 ```
 
@@ -67,7 +67,7 @@ How does it internally work?
 
 Okay how does mp3server work internally? It's actually rather simple I think:
 
-First of all a server-socket is created on port 8080 and bound to the INADDR\_ANY. The next step is to accept exactly one client, which will serve as the source-client, i.e. the client that sends an mp3-stream to the server. Now the interesting part beings. Before creating the server-socket, we actually did other stuff, we allocated a circular list for server-side buffering. This and using select() to check for writable clients prevents the network throughput from having huge spikes (http://klaxa.in/network\_spikes.png top left terminal). With buffering and select() we get a rather smooth network throughput graph (http://klaxa.in/no\_network\_spikes.png top right terminal). I implemented a global buffer as a circular list, because I wanted high efficiency and low resource waste. I looked at how mpd managed its http clients and found out that they keep a buffer for each client and run some sort of multi-threaded model to send the data to the client. I didn't want buffering per client and multi-threading felt evil and overkill. According to htop mp3server needs less than 4 kB of RAM and 0% CPU (at least on my low end kvm box, it actually needs a bit more on my android phone http://klaxa.in/mp3server\_android.png). So in the end I managed to write rather low-load code that even runs acceptably well on a phone (however, a rather overpowered one, test it yourself as much as you please). I tested it against memory leaks with valgrind too, and it appears there are no memory leaks present.
+First of all a server-socket is created on port 8080 and bound to the INADDR_ANY. The next step is to accept exactly one client, which will serve as the source-client, i.e. the client that sends an mp3-stream to the server. Now the interesting part beings. Before creating the server-socket, we actually did other stuff, we allocated a circular list for server-side buffering. This and using select() to check for writable clients prevents the network throughput from having huge spikes (http://klaxa.in/network_spikes.png top left terminal). With buffering and select() we get a rather smooth network throughput graph (http://klaxa.in/no_network_spikes.png top right terminal). I implemented a global buffer as a circular list, because I wanted high efficiency and low resource waste. I looked at how mpd managed its http clients and found out that they keep a buffer for each client and run some sort of multi-threaded model to send the data to the client. I didn't want buffering per client and multi-threading felt evil and overkill. According to htop mp3server needs less than 4 kB of RAM and 0% CPU (at least on my low end kvm box, it actually needs a bit more on my android phone http://klaxa.in/mp3server_android.png). So in the end I managed to write rather low-load code that even runs acceptably well on a phone (however, a rather overpowered one, test it yourself as much as you please). I tested it against memory leaks with valgrind too, and it appears there are no memory leaks present.
 
 TODO
 ----
