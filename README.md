@@ -26,31 +26,31 @@ More reasons I did this and a bit history about this project
 Once upon a time in #anime on freenode, I was again posting the music I was
 listening to, because it became a habit of mine to do so.
 
-> *	klaxa is listening to millie - Dreaming Forest
-> <Sean_McG>    klaxa: you play good music -- do you stream it at all?
-> <klaxa>	    no, should i?
-> *	Sean_McG would listen to it
-> <klaxa>       it wouldn't be up all the time, but i guess i can set something up
+> \*	klaxa is listening to millie - Dreaming Forest
+> \<Sean_McG\>    klaxa: you play good music -- do you stream it at all?
+> \<klaxa\>	    no, should i?
+> \*	Sean_McG would listen to it
+> \<klaxa\>       it wouldn't be up all the time, but i guess i can set something up
 
 So I thought up a few ways to do this...
 
-> <klaxa>	i have mpd running, i'd try to add some output that i grab locally via http, have something connect to my server which then encodes to mulitple formats and streams
-> <klaxa>	the hardest part i see right now is the streaming part
-> <klaxa>	the rest shouldn't be too hard, i could even do it with netcat
-> <klaxa>	if i knew how roboust mp3 is against starting to stream from just anywhere in the bytestream i could write my own server
+> \<klaxa\>	i have mpd running, i'd try to add some output that i grab locally via http, have something connect to my server which then encodes to mulitple formats and streams
+> \<klaxa\>	the hardest part i see right now is the streaming part
+> \<klaxa\>	the rest shouldn't be too hard, i could even do it with netcat
+> \<klaxa\>	if i knew how roboust mp3 is against starting to stream from just anywhere in the bytestream i could write my own server
 
 I found out pretty soon that mp3 isn't roboust against "starting to stream from just anywhere in the bytestream", but that didn't demotivate me. It was actually the opposite
 and I started reading the mp3 header specification.
 
 I implemented the specification and pretty much finished up everything within about a week.
 
-> <@albel727>   why restream mpd at all?
-> <klaxa>       because... why not?
-> <klaxa>       sure it can stream itself via httpd
-> <@albel727>   ^
-> <klaxa>       but for that i'd have to forward ports locally
-> <klaxa>       and i'm too lazy to do that
-> <klaxa>       so instead, i write code for a week
+> \<@albel727\>   why restream mpd at all?
+> \<klaxa\>       because... why not?
+> \<klaxa\>       sure it can stream itself via httpd
+> \<@albel727\>   ^
+> \<klaxa\>       but for that i'd have to forward ports locally
+> \<klaxa\>       and i'm too lazy to do that
+> \<klaxa\>       so instead, i write code for a week
 
 And that's basically why I wrote this.
 
