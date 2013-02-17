@@ -19,20 +19,20 @@
 // MP3 CONSTANTS
 
 // MPEG Version
-#define MPEGV1          0b11
-#define MPEGV2          0b10
-#define MPEGV2_5        0b00
+#define MPEGV1          0x3
+#define MPEGV2          0x2
+#define MPEGV2_5        0x0
 
 // Layer
-#define LAYER1          0b11
-#define LAYER2          0b10
-#define LAYER3          0b01
+#define LAYER1          0x3
+#define LAYER2          0x2
+#define LAYER3          0x1
 
 // Channel mode
-#define STEREO          0b00
-#define JOINT_STEREO    0b01
-#define DUAL_CHANNEL    0b10
-#define SINGLE_CHANNEL  0b11
+#define STEREO          0x0
+#define JOINT_STEREO    0x1
+#define DUAL_CHANNEL    0x2
+#define SINGLE_CHANNEL  0x3
 
 struct Frame {
     uint32_t header;
