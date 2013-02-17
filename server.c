@@ -248,7 +248,8 @@ int main(int argc, char *argv[] UNUSED) {
                 new_client->prev = cur_client;
                 //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
                 read(client, buffer, BUFSIZE); // lawl we don't really care...
-                ssize_t n = write(client, "HTTP/1.1 200 OK\r\n\r\n", 19);
+                ssize_t n = write(client,
+                            "HTTP/1.1 200 OK\r\nicy-metaint: 8192\r\n\r\n", 38);
                 if (n < 0) {
                     remove_client(new_client);
                     //fprintf(stderr, "Life is pointless because errno: %d\n", errno);

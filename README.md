@@ -7,7 +7,7 @@ That's about what it is.
 Usage
 -----
 
-As of now there are no command line options, all it does at the moment, is open a listening socket on port 8080 and take the first client that connects to that socket as a source for an mp3-stream. Every other client connecting after the first one is considered a normal client, i.e. the stream is being sent to them. IPv6 is supported (thanks Sean_McG), if you have IPv6 disabled in your kernel, change the #define IPv6 1 to #define IPv6 0 in server.c.
+As of now there are no command line options, all it does at the moment, is open a listening socket on port 8080 and take the first client that connects to that socket as a source for an mp3-stream. Every other client connecting after the first one is considered a normal client, i.e. the stream is being sent to them. IPv6 is supported (thanks Sean_McG), if you have IPv6 disabled in your kernel, change the #define IPV6 1 to #define IPV6 0 in server.c.
 
 Why would you do that if there are already things like icecast?
 ---------------------------------------------------------------
