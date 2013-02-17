@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <string.h>
+#include "config.h"
 #include "mp3split.h"
 #include "mp3stream.h"
 #include <errno.h>

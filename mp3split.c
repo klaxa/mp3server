@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "config.h"
 #include "mp3split.h"
 
 
