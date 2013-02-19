@@ -18,15 +18,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
-#define IPV6 0
-
-#if defined(__GNUC__)
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif
-
-int main(int argc, char *argv[] UNUSED) {
+int main(int argc, char *argv[]) {
     if (argc < 1) {
         //fprintf(stderr, "NO U >:V giev host and port\n");
         exit(1);
@@ -81,29 +73,53 @@ int main(int argc, char *argv[] UNUSED) {
     head_client->prev = NULL;
     head_client->next = NULL; 
     
-    int server, client, port = 8080;
+    int server = -1, client = -1;
+    unsigned int port = 8080, v4only = 0;
     socklen_t client_len;
     uint8_t buffer[BUFSIZE];
-    int af = AF_INET;
     struct sockaddr_storage client_addr;
-#if defined(AF_INET6)
     struct addrinfo hints, *res;
     char port_str[5];
-    int error = 0;
-    if (IPV6)
-        af = AF_INET6;
-#endif
-    server = socket(af, SOCK_STREAM, 0);
-    int on = 1;
-    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    int c, error = 0;
+
+    while ((c = getopt(argc, argv, "4")) != -1) {
+        switch(c) {
+            case '4':
+                v4only = 1;
+                break;
+            case '?':
+                fprintf(stderr,
+                "Unrecognized option: -%c\n", optopt);
+                break;
+        }
+    }
+
+    if (!v4only && (server = socket(AF_INET6, SOCK_STREAM, 0)) != 0) {
+        if(errno && (errno != EAFNOSUPPORT || errno != EPFNOSUPPORT)) {
+            perror(strerror(errno));
+            exit(1);
+        }
+    }
+
+    if(server < 0)
+        server = socket(AF_INET, SOCK_STREAM, 0);
+
     if (server < 0) {
+        //fprintf(stderr, "Something went wrong while creating a socket!\n");
+        perror(strerror(errno));
+        exit(1);
+    }
+    
+    int on = 1;
+    if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
         //fprintf(stderr, "Something went wrong while setting up the server!\n");
+        perror(strerror(errno));
         exit(1);
     }
     
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = PF_UNSPEC;
-    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = v4only ? PF_INET : PF_UNSPEC;
+    hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
     hints.ai_socktype = SOCK_STREAM;
 
     snprintf(port_str, sizeof(port_str), "%d", port);
@@ -115,14 +131,13 @@ int main(int argc, char *argv[] UNUSED) {
     }
     
     for(struct addrinfo *iter = res; iter; iter = iter->ai_next) {
-        if (iter->ai_family == af) {
             if (bind(server, iter->ai_addr,
                                 iter->ai_addrlen) < 0) {
-                fprintf(stderr, "Something went wrong while binding the server! %s\n",
-                                strerror(errno));
-                exit(1);
+                    fprintf(stderr, "Something went wrong while binding the server! %s\n",
+                                    strerror(errno));
+                    exit(1);
             }
-        }
+            else break;
     }
     freeaddrinfo(res);
     res = NULL;
