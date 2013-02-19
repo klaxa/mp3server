@@ -18,8 +18,6 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
-#define IPV6 0
-
 #if defined(__GNUC__)
 #define UNUSED __attribute__((unused))
 #else
@@ -84,19 +82,24 @@ int main(int argc, char *argv[] UNUSED) {
     int server, client, port = 8080;
     socklen_t client_len;
     uint8_t buffer[BUFSIZE];
-    int af = AF_INET;
     struct sockaddr_storage client_addr;
-#if defined(AF_INET6)
     struct addrinfo hints, *res;
     char port_str[5];
     int error = 0;
-    if (IPV6)
-        af = AF_INET6;
-#endif
-    server = socket(af, SOCK_STREAM, 0);
-    int on = 1;
-    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+    if ((server = socket(AF_INET6, SOCK_STREAM, 0)) != 0) {
+        if(errno == EAFNOSUPPORT || errno == EPFNOSUPPORT) {
+            server = socket(AF_INET, SOCK_STREAM, 0);
+        }
+    }
+
     if (server < 0) {
+        //fprintf(stderr, "Something went wrong while creating a socket!\n");
+        exit(1);
+    }
+    
+    int on = 1;
+    if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
         //fprintf(stderr, "Something went wrong while setting up the server!\n");
         exit(1);
     }
@@ -115,14 +118,15 @@ int main(int argc, char *argv[] UNUSED) {
     }
     
     for(struct addrinfo *iter = res; iter; iter = iter->ai_next) {
-        if (iter->ai_family == af) {
             if (bind(server, iter->ai_addr,
                                 iter->ai_addrlen) < 0) {
-                fprintf(stderr, "Something went wrong while binding the server! %s\n",
-                                strerror(errno));
-                exit(1);
+                if(errno != EADDRNOTAVAIL) {
+                    fprintf(stderr, "Something went wrong while binding the server! %s\n",
+                                    strerror(errno));
+                    exit(1);
+                }
             }
-        }
+            else break;
     }
     freeaddrinfo(res);
     res = NULL;
