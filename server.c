@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
@@ -17,6 +18,14 @@
 #include <signal.h>
 #include <sys/select.h>
 #include <sys/time.h>
+
+void _usage(char *name)
+{
+    fprintf(stdout,"Usage: %s [options]\nOptions:\n", name);
+    fprintf(stdout,"  --help\tDisplay this information\n");
+    fprintf(stdout,"  --version\tDisplay %s version information\n", PACKAGE_NAME);
+    fprintf(stdout,"  --v4only\tUse IPv4 sockets even if IPv6 is available\n");
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 1) {
@@ -80,12 +89,28 @@ int main(int argc, char *argv[]) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     char port_str[5];
-    int c, error = 0;
+    int c, error = 0, option_index = 0;
+    struct option long_options[] = {
+        {"v4only", no_argument, &v4only, 1},
+        {"version", no_argument, NULL, 'V'},
+        {"help", no_argument, NULL, 'h'},
+        {0, 0, 0, 0}
+    };
 
-    while ((c = getopt(argc, argv, "4")) != -1) {
+    while ((c = getopt_long(argc, argv, "4Vh",
+            long_options, &option_index)) != -1) {
         switch(c) {
             case '4':
                 v4only = 1;
+                break;
+            case 'V':
+                fprintf(stdout, "%s\n", PACKAGE_STRING);
+                exit(0);
+                break;
+            case 'h':
+                fprintf(stdout, "%s\n", PACKAGE_STRING);
+                _usage(argv[0]);
+                exit(0);
                 break;
             case '?':
                 fprintf(stderr,
