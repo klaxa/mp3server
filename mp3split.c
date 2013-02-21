@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "config.h"
@@ -57,8 +58,18 @@ struct Frame* get_frame(int fd) {
     print_info(header);
     size_t frame_length = get_frame_length(header);
     struct Frame* frame = malloc(sizeof(struct Frame));
-    frame->content = malloc(frame_length);
-    frame->header = header;
+
+    if(frame) {
+        frame->content = malloc(frame_length);
+        if(!frame->content) {
+            free(frame);
+            return NULL;
+        }
+        frame->header = header;
+    }
+    else
+        return NULL;
+
     ssize_t n = 0, n_tmp = 0;
     //fprintf(stderr, "Attempting to read %d bytes.\n", frame_length - 4);
     while (n < frame_length - 4) {
@@ -132,6 +143,11 @@ int is_header(uint32_t header) {
 
 char* int_to_binary_string(uint32_t n) {
     char* str = malloc(sizeof(char) * 32);
+
+    if(!str) {
+        perror(strerror(errno));
+        return NULL;
+    }
     
     unsigned int i;
     for (i = 0; i < 32; i++) {

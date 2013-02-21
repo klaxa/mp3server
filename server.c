@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
     // use this to test stuff
     //int mpd_test = open("mpd_test.mp3", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
     struct Client* head_client = malloc(sizeof(struct Client));
+    if(!head_client) {
+        perror(strerror(errno));
+        exit(1);
+    }
     
     head_client->sock = -1;
     head_client->prev = NULL;
@@ -219,6 +223,11 @@ int main(int argc, char *argv[]) {
     
     struct FrameBufferElement* FB_head = malloc(sizeof(
                                           struct FrameBufferElement));
+    if(!FB_head) {
+        perror(strerror(errno));
+        exit(1);
+    }
+
     FB_head->frame = NULL;
     FB_head->next = NULL;
     FB_head->prev = NULL;
@@ -228,6 +237,10 @@ int main(int argc, char *argv[]) {
     int cur_frame_id;
     for (cur_frame_id = 1; cur_frame_id < RINGBUFSIZE; cur_frame_id++) {
         cur_frame = malloc(sizeof(struct FrameBufferElement));
+        if(!cur_frame) {
+            perror(strerror(errno));
+            exit(1);
+        }
         cur_frame->id = cur_frame_id;
         cur_frame->frame = NULL;
         cur_frame->prev = prev_fbe;
@@ -275,6 +288,10 @@ int main(int argc, char *argv[]) {
                 }
                 //fprintf(stderr, "allocationg new client with fd %d\n", client);
                 struct Client* new_client = malloc(sizeof(struct Client));
+                if(!new_client) {
+                    perror(strerror(errno));
+                    exit(1);
+                }
                 new_client->next = NULL;
                 new_client->sent = 0;
                 new_client->fbe = cur_frame;
