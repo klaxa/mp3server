@@ -128,6 +128,8 @@ int main(int argc, char *argv[]) {
             perror(strerror(errno));
             exit(1);
         }
+        else
+            v4only = 1;
     }
 
     if(server < 0)
