@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (!v4only && (server = socket(AF_INET6, SOCK_STREAM, 0)) != 0) {
-        if(errno && (errno != EAFNOSUPPORT || errno != EPFNOSUPPORT)) {
+    if (!v4only && (server = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+        if(errno != EAFNOSUPPORT || errno != EPFNOSUPPORT) {
             perror(strerror(errno));
             exit(1);
         }
