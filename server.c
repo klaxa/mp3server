@@ -147,6 +147,13 @@ int main(int argc, char *argv[]) {
         perror(strerror(errno));
         exit(1);
     }
+
+#ifdef IPV6_V6ONLY
+    if (!v4only && setsockopt(server, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) != 0) {
+        perror(strerror(errno));
+        exit(1);
+    }
+#endif
     
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = v4only ? PF_INET : PF_UNSPEC;
