@@ -4,6 +4,8 @@ AUTOMAKE_OPTIONS = \
         dist-bzip2 \
         no-dist-gzip
 
+ACLOCAL_AMFLAGS = -I m4
+
 SET_FEATURES = -D_POSIX_C_SOURCE=200112L $(shell getconf LFS_CFLAGS)
 
 AM_CFLAGS = $(SET_FEATURES)
