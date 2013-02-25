@@ -33,49 +33,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     signal(SIGPIPE, SIG_IGN);
-    // Use this to use a server socket for connections
-    /*
     
-    int mp3_stream, mp3_server_port;
-    struct sockaddr_in mp3_server_addr;
-    struct hostent* mp3_server;
-    
-    mp3_server_port = atoi(argv[2]);
-    mp3_stream = socket(AF_INET, SOCK_STREAM, 0);
-    if (mp3_stream < 0) {
-        //fprintf(stderr, "Error can't into sockets %s\n", strerror(errno));
-        exit(1);
-    }
-    
-    mp3_server = gethostbyname(argv[1]);
-    if (mp3_server == NULL) {
-        //fprintf(stderr, "Error can't into servers %s\n", strerror(errno));
-        exit(1);
-    }
-    
-    memset(&mp3_server_addr, 0, sizeof(mp3_server_addr));
-    mp3_server_addr.sin_family = AF_INET;
-    memcpy(&mp3_server_addr.sin_addr.s_addr, mp3_server->h_addr,
-                                                        mp3_server->h_length);
-    mp3_server_addr.sin_port = htons(mp3_server_port);
-    if (connect(mp3_stream, (struct sockaddr *) &mp3_server_addr,
-                    sizeof(mp3_server_addr)) < 0) {
-        //fprintf(stderr, "Error can't into connect %s\n", strerror(errno));
-        exit(1);
-    }
-    
-    ssize_t n;
-    n = write(mp3_stream, "GET / HTTP/1.1\r\n\r\n", 18);
-    if (n < 0) {
-        //fprintf(stderr, "Error can't into write %s\n", strerror(errno));
-        exit(1);
-    }
-    */
-    
-    //struct Client* head_client = NULL;
-    
-    // use this to test stuff
-    //int mpd_test = open("mpd_test.mp3", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
     struct Client* head_client = malloc(sizeof(struct Client));
     if(!head_client) {
         perror(strerror(errno));
@@ -179,56 +137,6 @@ int main(int argc, char *argv[]) {
     }
     freeaddrinfo(res);
     res = NULL;
-    
-    
-    /*listen(server, 10);
-    client_len = sizeof(client_addr);
-    client = accept(server, (struct sockaddr*) &client_addr, &client_len);
-    if (client < 0) {
-        //fprintf(stderr, "Something went wrong while accepting the client!\n");
-        exit(1);
-    }
-    head_client->sock = client;
-    read(head_client->sock, buffer, BUFSIZE); // lawl we don't really care...
-    write(head_client->sock, "HTTP/1.1 200 OK\r\n\r\n", 19); */
-    
-    // establish shared memory
-    
-    // actually, fuck shared mem, we're doing it in one process!
-    /*
-    size_t region_size = sysconf(_SC_PAGE_SIZE);
-    char *memname = "/clients";
-    
-    int shmfd = shm_open(memname, O_CREAT | O_TRUNC | O_RDWR, 0666);
-    if (shmfd == -1) {
-        //fprintf(stderr, "Could not open shared memory\n");
-        exit(1);
-    }
-    
-    int r = ftruncate(shmfd, region_size);
-    if (r != 0) {
-        //fprintf(stderr, "Could not truncate shared memory\n");
-        exit(1);
-    }
-    
-    void *ptr = mmap(0, region_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
-    if (ptr == MAP_FAILED) {
-        //fprintf(stderr, "Map failed\n");
-        exit(1);
-    }
-    close(shmfd);
-    
-    memcpy(ptr, head_client, sizeof(struct Client));
-    free(head_client);
-    
-    
-    pid_t child;
-    child = fork();
-    if (child == 0) {
-        //fprintf(stderr, "mp3_stream fd: %d\n", mp3_stream);
-        serve_stream(mp3_stream, ptr);
-    }
-    */
     
     struct FrameBufferElement* FB_head = malloc(sizeof(
                                           struct FrameBufferElement));
@@ -341,12 +249,8 @@ int main(int argc, char *argv[]) {
             
         }
     }
-/*    
-    munmap(ptr, region_size);
-    shm_unlink(memname);
-    return 0;
-*/
 }
+
 void serve_frame(int in, struct Client* clients) {
     //fprintf(stderr, "lol let's go!\n");
     struct Client* cur_client = clients;
@@ -391,47 +295,6 @@ int add_frame(int in, struct FrameBufferElement* cur_frame) {
     cur_frame->id = id;
     return cur_frame->frame != NULL;
 }
-    
-
-// serve_stream() is probably unneeded
-/*
-void serve_stream(int in, struct Client* clients) {
-    //fprintf(stderr, "lol let's go!\n");
-    struct Client* cur_client = clients;
-    //fprintf(stderr, "got client pointer! %p\n", clients);
-    if (clients == NULL) {
-        //fprintf(stderr, "but there are no clients :(\n");
-    }
-    struct Frame *frame = get_frame(in);
-    //fprintf(stderr, "got frame!\n");
-    //print_info(frame->header);
-    if (frame == NULL) {
-        //fprintf(stderr, "OH NOES! frame == NULL! Assuming EOF\n");
-        close(in);
-        return;
-    }
-    while (frame != NULL) {
-        //fprintf(stderr, "frame is not NULL! client fd is: %d\n", cur_client->sock);
-        if (cur_client->sock == -1) { // we're the head, we don't want that
-            //fprintf(stderr, "first real client is %p->%p\n", cur_client, cur_client->next);
-            cur_client = cur_client->next;
-        }
-        while (cur_client != NULL) {
-            //fprintf(stderr, "client is not NULL, but %d!\n", cur_client->sock);
-            if(!write_frame(frame, cur_client->sock)) {
-                cur_client = cur_client->next;
-                remove_client(cur_client->prev);
-            } else {
-                cur_client = cur_client->next;
-            }
-        }
-        cur_client = clients;
-        frame = get_frame(in);
-    }
-    close(in);
-    return;
-}
-*/
 
 void remove_client(struct Client* client) {
     //fprintf(stderr, "Dropped client with fd: %d", client->sock);
@@ -531,8 +394,6 @@ void write_data(struct Client* client) {
     }
     
 }
-    
-
 
 void print_FB(struct FrameBufferElement* head)
 {
