@@ -394,7 +394,7 @@ void write_data(struct Client* client) {
     //if (sent_tmp < 0) { // write failed
     //    remove_client(client);
     //    return;
-    }
+    //}
     client->sent += sent_tmp;
     //fprintf(stderr, "%d bytes\n");
     if (client->sent == frame_length) {
