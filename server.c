@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
-
+#endif
     while ((c = getopt_long(argc, argv, "4Vh",
             long_options, &option_index)) != -1) {
         switch(c) {
@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Something went wrong while binding the server! %s\n",
                                     strerror(errno));
                     exit(1);
+                    }
             }
             else break;
     }
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
     client_len = sizeof(client_addr);
     int mp3_stream = accept(server, (struct sockaddr*) &client_addr,
                                                                  &client_len);
-    
+    int frame_number = 0;
     for (;;) {
         listen(server, 10);
         // prepare fds for select
@@ -191,7 +192,8 @@ int main(int argc, char *argv[]) {
         while (cur_client != NULL) {
             FD_SET(cur_client->sock, &wfds);
             cur_client = cur_client->next;
-        } 
+        }
+        fprintf(stderr, "Frame: %d, Buffer: %d\n", frame_number, cur_frame->id);
         retval = select(max(server, mp3_stream) + 1, &rfds, NULL, NULL, NULL);
         if (retval == -1) {
             //fprintf(stderr, "select() failed, abandon process!\n");
@@ -201,6 +203,8 @@ int main(int argc, char *argv[]) {
             if (FD_ISSET(server, &rfds)) { // add client
                 client = accept(server, (struct sockaddr*) &client_addr,
                             &client_len);
+                int flags = fcntl(client, F_GETFL, 0);
+                fcntl(client, F_SETFL, flags | O_NONBLOCK);
                 //fprintf(stderr, "Got new client!\n");
                 if (client < 0) {
                     //fprintf(stderr, "Something went wrong while accepting the client!\n");
@@ -227,7 +231,8 @@ int main(int argc, char *argv[]) {
                 //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
                 read(client, buffer, BUFSIZE); // lawl we don't really care...
                 ssize_t n = write(client,
-                            "HTTP/1.1 200 OK\r\nicy-metaint: 8192\r\n\r\n", 38);
+                            "HTTP/1.1 200 OK\r\n\r\n", 19);
+                            //icy-metaint: 8192\r\n\r\n", 38);
                 if (n < 0) {
                     remove_client(new_client);
                     //fprintf(stderr, "Life is pointless because errno: %d\n", errno);
@@ -246,6 +251,8 @@ int main(int argc, char *argv[]) {
             while (cur_client != NULL) { // select() through our clients
                 if (FD_ISSET(cur_client->sock, &wfds)) { // client can be written
                     write_data(cur_client);
+                    fprintf(stderr, "Client: %d, Frame: %d\n", cur_client->sock,
+                        cur_client->frame_id);
                 }
                 cur_client = cur_client->next;
             }
