@@ -391,9 +391,9 @@ void write_data(struct Client* client) {
     //fprintf(stderr, "Sent data ");
     sent_tmp = write(client->sock, client->fbe->frame->content
                             + client->sent - 4, frame_length - client->sent);
-    if (sent_tmp < 0) { // write failed
-        remove_client(client);
-        return;
+    //if (sent_tmp < 0) { // write failed
+    //    remove_client(client);
+    //    return;
     }
     client->sent += sent_tmp;
     //fprintf(stderr, "%d bytes\n");
