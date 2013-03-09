@@ -399,8 +399,9 @@ void write_data(struct Client* client) {
     }
     if (client->frame_id != client->fbe->id) {
         // client will skip, lagged behind too long in the ringbuffer
-        fprintf(stderr, "Client %d lagging behind.\n", client->sock);
-        if (client->skipped_frames++ > RINGBUFSIZE * 4) {
+        fprintf(stderr, "Client %d lagging behind %d frames.\n", client->sock,
+                                                        client->skipped_frames);
+        if (client->skipped_frames++ > RINGBUFSIZE * 2) {
             // assume the client has quit
             remove_client(client);
             return;
