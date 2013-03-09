@@ -208,13 +208,15 @@ int main(int argc, char *argv[]) {
                 if(flags == -1)
                 {
                     perror(strerror(errno));
-                    exit(1);
+                    close(client);
+                    continue;
                 }
 
                 if(fcntl(client, F_SETFL, flags | O_NONBLOCK) == -1)
                 {
                     perror(strerror(errno));
-                    exit(1);
+                    close(client);
+                    continue;
                 }
 
                 //fprintf(stderr, "Got new client!\n");
@@ -390,9 +392,13 @@ int write_frame(struct Frame* frame, struct Client* client) {
 }
 
 void write_data(struct Client* client) {
-    if (client->fbe->frame == NULL || client->frame_id != client->fbe->id) {
-    // WTF? no or wrong frame, drop the client
+    if (client->fbe->frame == NULL) {
+        // WTF? no frame, drop the client
         remove_client(client);
+    }
+    if (client->frame_id != client->fbe->id) {
+        // client will skip, lagged behind too long in the ringbuffer
+        fprintf(stderr, "Client %d lagging behind.\n", client->sock);
     }
     size_t frame_length;
     ssize_t sent_tmp;
