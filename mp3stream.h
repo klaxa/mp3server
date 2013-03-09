@@ -11,6 +11,7 @@ struct Client {
     struct FrameBufferElement* fbe;
     ssize_t sent;
     unsigned int frame_id;
+    unsigned int skipped_frames;
 };
 
 struct FrameBufferElement {

@@ -234,6 +234,7 @@ int main(int argc, char *argv[]) {
                 new_client->sent = 0;
                 new_client->fbe = cur_frame;
                 new_client->frame_id = cur_frame->id;
+                new_client->skipped_frames = 0;
                 struct Client* cur_client = head_client;
                 while (cur_client->next != NULL) { // get the last client struct
                     cur_client = cur_client->next;
@@ -399,6 +400,13 @@ void write_data(struct Client* client) {
     if (client->frame_id != client->fbe->id) {
         // client will skip, lagged behind too long in the ringbuffer
         fprintf(stderr, "Client %d lagging behind.\n", client->sock);
+        if (client->skipped_frames++ > RINGBUFSIZE * 4) {
+            // assume the client has quit
+            remove_client(client);
+            return;
+        }
+    } else {
+        client->skipped_frames = 0;
     }
     size_t frame_length;
     ssize_t sent_tmp;
