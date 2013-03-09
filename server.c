@@ -385,7 +385,7 @@ void write_data(struct Client* client) {
     size_t frame_length;
     ssize_t sent_tmp;
     uint32_t header_nl;
-    do {
+    while (!client->fbe->latest) {
         frame_length = get_frame_length(client->fbe->frame->header);
         sent_tmp = 0;
         if (client->sent < 4) { // we're not done sending the header
@@ -412,8 +412,7 @@ void write_data(struct Client* client) {
             client->frame_id = client->fbe->id;
             client->sent = 0;
         }
-    } while(!client->fbe->prev->latest);
-    
+    }
 }
 
 void print_FB(struct FrameBufferElement* head)
