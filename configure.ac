@@ -13,6 +13,8 @@ AC_PROG_CC_C99
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
+AX_CFLAGS_SUN_OPTION([-xc99])
+
 dnl check if the compiler supports '-c' and '-o' options
 AM_PROG_CC_C_O
 
