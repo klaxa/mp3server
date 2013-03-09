@@ -382,12 +382,15 @@ void write_data(struct Client* client) {
     // WTF? no or wrong frame, drop the client
         remove_client(client);
     }
+    size_t frame_length;
+    ssize_t sent_tmp;
+    uint32_t header_nl;
     do {
-        size_t frame_length = get_frame_length(client->fbe->frame->header);
-        ssize_t sent_tmp = 0;
+        frame_length = get_frame_length(client->fbe->frame->header);
+        sent_tmp = 0;
         if (client->sent < 4) { // we're not done sending the header
             //fprintf(stderr, "Sent Header ");
-            uint32_t header_nl = htonl(client->fbe->frame->header);
+            header_nl = htonl(client->fbe->frame->header);
             sent_tmp = write(client->sock, &header_nl + client->sent,
                                                                 4 - client->sent);
             client->sent += sent_tmp;
@@ -409,7 +412,7 @@ void write_data(struct Client* client) {
             client->frame_id = client->fbe->id;
             client->sent = 0;
         }
-    } while(!client->fbe->latest);
+    } while(!client->fbe->prev->latest);
     
 }
 
