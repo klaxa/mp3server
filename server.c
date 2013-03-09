@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
         cur_frame->id = cur_frame_id;
         cur_frame->frame = NULL;
         cur_frame->prev = prev_fbe;
+        cur_frame->latest = 0;
         prev_fbe->next = cur_frame;
         prev_fbe = cur_frame;
     }
@@ -193,7 +194,6 @@ int main(int argc, char *argv[]) {
             FD_SET(cur_client->sock, &wfds);
             cur_client = cur_client->next;
         }
-        fprintf(stderr, "Frame: %d, Buffer: %d\n", frame_number, cur_frame->id);
         retval = select(max(server, mp3_stream) + 1, &rfds, NULL, NULL, NULL);
         if (retval == -1) {
             //fprintf(stderr, "select() failed, abandon process!\n");
@@ -246,13 +246,16 @@ int main(int argc, char *argv[]) {
                     exit(0);
                 }
                 cur_frame = cur_frame->next;
+                fprintf(stderr, "Frame: %d, Buffer: %d\n", frame_number,
+                                                                cur_frame->id);
+                frame_number++;
             }
             cur_client = head_client->next; // get the first "real" client
             while (cur_client != NULL) { // select() through our clients
                 if (FD_ISSET(cur_client->sock, &wfds)) { // client can be written
-                    write_data(cur_client);
                     fprintf(stderr, "Client: %d, Frame: %d\n", cur_client->sock,
                         cur_client->frame_id);
+                    write_data(cur_client);
                 }
                 cur_client = cur_client->next;
             }
@@ -297,12 +300,14 @@ void serve_frame(int in, struct Client* clients) {
 
 int add_frame(int in, struct FrameBufferElement* cur_frame) {
     int id = (cur_frame->id + 1) % (RINGBUFSIZE + 1);
+    cur_frame->latest = 0;
     cur_frame = cur_frame->next;
     if (cur_frame->frame != NULL)
         free(cur_frame->frame->content);
     free(cur_frame->frame);
     cur_frame->frame = get_frame(in);
     cur_frame->id = id;
+    cur_frame->latest = 1;
     return cur_frame->frame != NULL;
 }
 
@@ -377,31 +382,34 @@ void write_data(struct Client* client) {
     // WTF? no or wrong frame, drop the client
         remove_client(client);
     }
-    size_t frame_length = get_frame_length(client->fbe->frame->header);
-    ssize_t sent_tmp = 0;
-    if (client->sent < 4) { // we're not done sending the header
-        //fprintf(stderr, "Sent Header ");
-        uint32_t header_nl = htonl(client->fbe->frame->header);
-        sent_tmp = write(client->sock, &header_nl + client->sent,
-                                                            4 - client->sent);
+    do {
+        size_t frame_length = get_frame_length(client->fbe->frame->header);
+        ssize_t sent_tmp = 0;
+        if (client->sent < 4) { // we're not done sending the header
+            //fprintf(stderr, "Sent Header ");
+            uint32_t header_nl = htonl(client->fbe->frame->header);
+            sent_tmp = write(client->sock, &header_nl + client->sent,
+                                                                4 - client->sent);
+            client->sent += sent_tmp;
+            //fprintf(stderr, "%d bytes\n", sent_tmp);
+            sent_tmp = 0;
+        }
+        //fprintf(stderr, "Sent data ");
+        sent_tmp = write(client->sock, client->fbe->frame->content
+                                + client->sent - 4, frame_length - client->sent);
+        if (sent_tmp < 0) { // write failed, check for error
+            if (errno == EPIPE) // client quit
+                remove_client(client);
+            return;
+        }
         client->sent += sent_tmp;
-        //fprintf(stderr, "%d bytes\n", sent_tmp);
-        sent_tmp = 0;
-    }
-    //fprintf(stderr, "Sent data ");
-    sent_tmp = write(client->sock, client->fbe->frame->content
-                            + client->sent - 4, frame_length - client->sent);
-    //if (sent_tmp < 0) { // write failed
-    //    remove_client(client);
-    //    return;
-    //}
-    client->sent += sent_tmp;
-    //fprintf(stderr, "%d bytes\n");
-    if (client->sent == frame_length) {
-        client->fbe = client->fbe->next;
-        client->frame_id = client->fbe->id;
-        client->sent = 0;
-    }
+        //fprintf(stderr, "%d bytes\n");
+        if (client->sent == frame_length) {
+            client->fbe = client->fbe->next;
+            client->frame_id = client->fbe->id;
+            client->sent = 0;
+        }
+    } while(!client->fbe->latest);
     
 }
 

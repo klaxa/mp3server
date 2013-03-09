@@ -18,6 +18,7 @@ struct FrameBufferElement {
 	struct FrameBufferElement* prev;
 	struct FrameBufferElement* next;
 	unsigned int id;
+	int latest;
 };
 
 //void serve_stream(int in, struct Client* clients);
