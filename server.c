@@ -203,8 +203,20 @@ int main(int argc, char *argv[]) {
             if (FD_ISSET(server, &rfds)) { // add client
                 client = accept(server, (struct sockaddr*) &client_addr,
                             &client_len);
+
                 int flags = fcntl(client, F_GETFL, 0);
-                fcntl(client, F_SETFL, flags | O_NONBLOCK);
+                if(flags == -1)
+                {
+                    perror(strerror(errno));
+                    exit(1);
+                }
+
+                if(fcntl(client, F_SETFL, flags | O_NONBLOCK) == -1)
+                {
+                    perror(strerror(errno));
+                    exit(1);
+                }
+
                 //fprintf(stderr, "Got new client!\n");
                 if (client < 0) {
                     //fprintf(stderr, "Something went wrong while accepting the client!\n");
