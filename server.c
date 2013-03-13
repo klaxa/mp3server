@@ -261,15 +261,15 @@ int main(int argc, char *argv[]) {
                     exit(0);
                 }
                 cur_frame = cur_frame->next;
-                fprintf(stderr, "Frame: %d, Buffer: %d\n", frame_number,
-                                                                cur_frame->id);
+                //fprintf(stderr, "Frame: %d, Buffer: %d\n", frame_number,
+                //                                                cur_frame->id);
                 frame_number++;
             }
             cur_client = head_client->next; // get the first "real" client
             while (cur_client != NULL) { // select() through our clients
                 if (FD_ISSET(cur_client->sock, &wfds)) { // client can be written
-                    fprintf(stderr, "Client: %d, Frame: %d\n", cur_client->sock,
-                        cur_client->frame_id);
+                //    fprintf(stderr, "Client: %d, Frame: %d\n", cur_client->sock,
+                //        cur_client->frame_id);
                     write_data(cur_client);
                 }
                 cur_client = cur_client->next;
@@ -403,6 +403,7 @@ void write_data(struct Client* client) {
                                                         client->skipped_frames);
         if (client->skipped_frames++ > RINGBUFSIZE * 2) {
             // assume the client has quit
+						fprintf(stderr, "Client %d dropped.\n", client->sock);
             remove_client(client);
             return;
         }
