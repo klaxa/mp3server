@@ -181,7 +181,8 @@ int main(int argc, char *argv[]) {
     client_len = sizeof(client_addr);
     int mp3_stream = accept(server, (struct sockaddr*) &client_addr,
                                                                  &client_len);
-    int frame_number = 0;
+    unsigned int frame_number = 0;
+    unsigned int client_count = 0;
     for (;;) {
         listen(server, 10);
         // prepare fds for select
@@ -244,6 +245,7 @@ int main(int argc, char *argv[]) {
                 cur_client->next = new_client;
                 new_client->prev = cur_client;
                 //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
+                fprintf(stderr, "Client %d connected, clients: %d\n", new_client->sock, ++client_count);
                 read(client, buffer, BUFSIZE); // lawl we don't really care...
                 ssize_t n = write(client,
                             "HTTP/1.1 200 OK\r\n\r\n", 19);
@@ -327,7 +329,8 @@ int add_frame(int in, struct FrameBufferElement* cur_frame) {
 }
 
 void remove_client(struct Client* client) {
-    //fprintf(stderr, "Dropped client with fd: %d", client->sock);
+    fprintf(stderr, "Client %d dropped, clients: %d", client->sock,
+                                                                --client_count);
     if (client->prev != NULL) { // we're not the head
         client->prev->next = client->next;
         if (client->next != NULL) // we're not the last element
@@ -403,7 +406,6 @@ void write_data(struct Client* client) {
                                                         client->skipped_frames);
         if (client->skipped_frames++ > RINGBUFSIZE * 2) {
             // assume the client has quit
-						fprintf(stderr, "Client %d dropped.\n", client->sock);
             remove_client(client);
             return;
         }
