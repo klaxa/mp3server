@@ -331,7 +331,7 @@ int add_frame(int in, struct FrameBufferElement* cur_frame) {
 }
 
 void remove_client(struct Client* client) {
-    fprintf(stderr, "Client %d dropped, clients: %d", client->sock,
+    fprintf(stderr, "Client %d dropped, clients: %d\n", client->sock,
                                                                 --client_count);
     if (client->prev != NULL) { // we're not the head
         client->prev->next = client->next;
