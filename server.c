@@ -19,6 +19,9 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
+unsigned int client_count = 0;
+
+
 void _usage(char *name)
 {
     fprintf(stdout,"Usage: %s [options]\nOptions:\n", name);
@@ -182,7 +185,6 @@ int main(int argc, char *argv[]) {
     int mp3_stream = accept(server, (struct sockaddr*) &client_addr,
                                                                  &client_len);
     unsigned int frame_number = 0;
-    unsigned int client_count = 0;
     for (;;) {
         listen(server, 10);
         // prepare fds for select
@@ -245,7 +247,8 @@ int main(int argc, char *argv[]) {
                 cur_client->next = new_client;
                 new_client->prev = cur_client;
                 //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
-                fprintf(stderr, "Client %d connected, clients: %d\n", new_client->sock, ++client_count);
+                fprintf(stderr, "Client %d connected, clients: %d\n",
+                                            new_client->sock, ++client_count);
                 read(client, buffer, BUFSIZE); // lawl we don't really care...
                 ssize_t n = write(client,
                             "HTTP/1.1 200 OK\r\n\r\n", 19);
@@ -276,7 +279,6 @@ int main(int argc, char *argv[]) {
                 }
                 cur_client = cur_client->next;
             }
-            
         }
     }
 }
