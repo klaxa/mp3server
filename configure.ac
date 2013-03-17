@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT([mp3server], [0.1])
+AC_INIT([mp3server], [0.2])
 AC_CONFIG_SRCDIR([mp3split.h])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([foreign 1.11 dist-bzip2 tar-ustar])
