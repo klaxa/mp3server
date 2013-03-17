@@ -32,6 +32,7 @@ void _usage(char *name)
     fprintf(stdout,"  --version\tDisplay %s version information\n", PACKAGE_NAME);
 #endif
     fprintf(stdout,"  --v4only\tUse IPv4 sockets even if IPv6 is available\n");
+    fprintf(stdout,"  --v6only\tUse IPv6 sockets even if IPv4 is available\n");
 }
 
 #define DUMMY_BUFSIZE 8
@@ -115,28 +116,41 @@ int main(int argc, char *argv[]) {
     head_client->prev = NULL;
     head_client->next = NULL; 
     
-    int server = -1, client = -1, v4only = 0;
+    int server4 = -1, server6 = -1, v4only = 0, v6only = 0, opts;
     unsigned int port = 8080;
     socklen_t client_len;
-    uint8_t buffer[BUFSIZE];
-    int af = AF_INET;
     struct sockaddr_storage client_addr;
-#if defined(AF_INET6)
     struct addrinfo hints, *res;
     char port_str[5];
     int c, error = 0, option_index = 0;
     struct option long_options[] = {
         {"v4only", no_argument, &v4only, 1},
+        {"v6only", no_argument, &v6only, 1},
         {"version", no_argument, NULL, 'V'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
-#endif
-    while ((c = getopt_long(argc, argv, "4Vh",
-            long_options, &option_index)) != -1) {
+
+    while(1) {
+        c = getopt_long(argc, argv, "46Vh",
+                long_options, &option_index);
+        if(c == -1)
+            break;
+
         switch(c) {
-            case '4':
-                v4only = 1;
+             case '4':
+                if(v6only) {
+                    fprintf(stderr, "%s: cannot specify -4 and -6 together\n", argv[0]);
+                    exit(1);
+                }
+                 v4only = 1;
+                 break;
+            case '6':
+                if(v4only) {
+                    fprintf(stderr, "%s: cannot specify -6 and -4 together\n", argv[0]);
+                    exit(1);
+                }
+                v6only = 1;
                 break;
             case 'V':
 #ifdef PACKAGE_STRING
@@ -159,40 +173,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (!v4only && (server = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
-        if(errno != EAFNOSUPPORT || errno != EPFNOSUPPORT) {
-            perror(strerror(errno));
-            exit(1);
-        }
-        else
-            v4only = 1;
-    }
-
-    if(server < 0)
-        server = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (server < 0) {
-        //fprintf(stderr, "Something went wrong while creating a socket!\n");
-        perror(strerror(errno));
-        exit(1);
-    }
-    
-    int on = 1;
-    if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
-        //fprintf(stderr, "Something went wrong while setting up the server!\n");
-        perror(strerror(errno));
-        exit(1);
-    }
-
-#ifdef IPV6_V6ONLY
-    if (!v4only && setsockopt(server, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) != 0) {
-        perror(strerror(errno));
-        exit(1);
-    }
-#endif
-    
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = v4only ? PF_INET : PF_UNSPEC;
+    hints.ai_family = PF_UNSPEC;
     hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
     hints.ai_socktype = SOCK_STREAM;
 
@@ -203,17 +185,87 @@ int main(int argc, char *argv[]) {
         perror(gai_strerror(error));
         exit(1);
     }
-    
+
+    if (!v4only && (server6 = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+        if(errno != EAFNOSUPPORT && errno != EPFNOSUPPORT) {
+            perror(strerror(errno));
+            exit(1);
+        }
+        else
+            v4only = 1;
+    }
+
+    if(!v6only && (server4 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        if(errno != EAFNOSUPPORT && errno != EPFNOSUPPORT) {
+            perror(strerror(errno));
+            exit(1);
+        }
+        else
+            v6only = 1;
+    }
+
+    int on = 1;
+    if (server4 > 0 && setsockopt(server4, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
+        //fprintf(stderr, "Something went wrong while setting up the server!\n");
+        perror(strerror(errno));
+        exit(1);
+    }
+
+    if (server6 > 0 && setsockopt(server6, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
+        //fprintf(stderr, "Something went wrong while setting up the server!\n");
+        perror(strerror(errno));
+        exit(1);
+    }
+
+#ifdef IPV6_V6ONLY
+    /* on supported operating systems, make the IPv6 socket listen only for IPv6 connections */
+    if (server6 > 0 && setsockopt(server6, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) != 0) {
+        perror(strerror(errno));
+        exit(1);
+    }
+#endif
+
+    /* make IPv4 listening socket non-blocking */
+    if(server4 > 0) {
+        if((opts = fcntl(server4, F_GETFL)) == -1)
+        {
+            perror(strerror(errno));
+            exit(1);
+        }
+
+        opts = (opts | O_NONBLOCK);
+        if (fcntl(server4, F_SETFL, opts) < 0)
+        {
+            perror(strerror(errno));
+            exit(1);
+        }
+    }
+
+    /* make IPv6 listening socket non-blocking */
+    if(server6 > 0) {
+        if((opts = fcntl(server6, F_GETFL)) == -1)
+        {
+            perror(strerror(errno));
+            exit(1);
+        }
+
+        opts = (opts | O_NONBLOCK);
+        if (fcntl(server6, F_SETFL, opts) < 0)
+        {
+            perror(strerror(errno));
+            exit(1);
+        }
+    }
+
     for(struct addrinfo *iter = res; iter; iter = iter->ai_next) {
-        if (iter->ai_family == af) {
-            if (bind(server, iter->ai_addr,
-                                iter->ai_addrlen) < 0) {
-                    fprintf(stderr, "Something went wrong while binding the server! %s\n",
-                                    strerror(errno));
-                    exit(1);
-                    }
-            }
-            else break;
+        int server = (iter->ai_family == PF_INET6 ? server6 : server4);
+        if (server > 0 && bind(server, iter->ai_addr,
+                 iter->ai_addrlen) < 0) {
+                close(server);
+                server = -1;
+                fprintf(stderr, "Something went wrong while binding the server! %s\n",
+                        strerror(errno));
+        }
     }
     freeaddrinfo(res);
     res = NULL;
@@ -248,34 +300,53 @@ int main(int argc, char *argv[]) {
     cur_frame->next = FB_head;
     FB_head->prev = cur_frame;
     
-    fd_set rfds, wfds;
+    fd_set master_fds, rfds, wfds;
     int retval;
     
+    FD_ZERO(&master_fds);
+
     // we make the first client the client that serves our mp3 stream.
     
-    listen(server, 1);
+    if (server4 > 0) { listen(server4, 1); FD_SET(server4, &master_fds); }
+    if (server6 > 0) { listen(server6, 1); FD_SET(server6, &master_fds); }
+
+    memcpy(&rfds, &master_fds, sizeof(master_fds));
+
+    retval = select(max(server4, server6) + 1, &rfds, NULL, NULL, NULL);
+    if (retval == -1) exit(1);
+
     client_len = sizeof(client_addr);
-    int mp3_stream = accept(server, (struct sockaddr*) &client_addr,
-                                                                 &client_len);
+    
+    int mp3_stream = -1;
+
+    if (FD_ISSET(server4, &rfds)) {
+        mp3_stream = accept(server4, (struct sockaddr*) &client_addr,
+                            &client_len);
+    } else if (FD_ISSET(server6, &rfds)) {
+        mp3_stream = accept(server6, (struct sockaddr*) &client_addr,
+                            &client_len);
+    }
+
     unsigned int frame_number = 0;
     for (;;) {
-        listen(server, 10);
         // prepare fds for select
-        FD_ZERO(&rfds);
+        memcpy(&rfds, &master_fds, sizeof(master_fds));
         FD_ZERO(&wfds);
-        FD_SET(server, &rfds);
+        if (server4 > 0) listen(server4, 10);
+        if (server6 > 0) listen(server6, 10);
         FD_SET(mp3_stream, &rfds);
         struct Client* cur_client = head_client->next;
         while (cur_client != NULL) {
             FD_SET(cur_client->sock, &wfds);
             cur_client = cur_client->next;
         }
-        retval = select(max(server, mp3_stream) + 1, &rfds, NULL, NULL, NULL);
+        retval = select(max(max(server4, server6), mp3_stream) + 1, &rfds, NULL, NULL, NULL);
         if (retval == -1) {
             //fprintf(stderr, "select() failed, abandon process!\n");
             exit(1);
         } else if (retval) {
-            if (FD_ISSET(server, &rfds)) clientloop(server, head_client, cur_frame);
+            if (FD_ISSET(server6, &rfds)) clientloop(server6, head_client, cur_frame);
+            if (FD_ISSET(server4, &rfds)) clientloop(server4, head_client, cur_frame);
 
             if (FD_ISSET(mp3_stream, &rfds)) { // can read mp3_stream
                 if(!add_frame(mp3_stream, cur_frame)) { // frame is NULL --> EOF
