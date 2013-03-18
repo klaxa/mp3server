@@ -10,7 +10,9 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <string.h>
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 #include "mp3split.h"
 #include "mp3stream.h"
 #include <errno.h>
@@ -26,7 +28,9 @@ void _usage(char *name)
 {
     fprintf(stdout,"Usage: %s [options]\nOptions:\n", name);
     fprintf(stdout,"  --help\tDisplay this information\n");
+#ifdef PACKAGE_NAME
     fprintf(stdout,"  --version\tDisplay %s version information\n", PACKAGE_NAME);
+#endif
     fprintf(stdout,"  --v4only\tUse IPv4 sockets even if IPv6 is available\n");
 }
 
@@ -71,11 +75,15 @@ int main(int argc, char *argv[]) {
                 v4only = 1;
                 break;
             case 'V':
+#ifdef PACKAGE_STRING
                 fprintf(stdout, "%s\n", PACKAGE_STRING);
+#endif
                 exit(0);
                 break;
             case 'h':
+#ifdef PACKAGE_STRING
                 fprintf(stdout, "%s\n", PACKAGE_STRING);
+#endif
                 _usage(argv[0]);
                 exit(0);
                 break;
