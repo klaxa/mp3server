@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
             case '?':
                 fprintf(stderr,
                 "Unrecognized option: -%c\n", optopt);
+                exit(1);
                 break;
         }
     }
