@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
     head_client->prev = NULL;
     head_client->next = NULL; 
     
-    int server = -1, client = -1;
-    unsigned int port = 8080, v4only = 0;
+    int server = -1, client = -1, v4only = 0;
+    unsigned int port = 8080;
     socklen_t client_len;
     uint8_t buffer[BUFSIZE];
     int af = AF_INET;
