@@ -34,6 +34,70 @@ void _usage(char *name)
     fprintf(stdout,"  --v4only\tUse IPv4 sockets even if IPv6 is available\n");
 }
 
+#define DUMMY_BUFSIZE 8
+
+static inline void clientloop(int sockfd, struct Client* const head_client, struct FrameBufferElement* const cur_frame)
+{
+    int client = -1;
+    int8_t buffer[DUMMY_BUFSIZE];
+    struct sockaddr_storage client_addr;
+    socklen_t client_len = sizeof(client_addr);
+
+    client = accept(sockfd, (struct sockaddr*) &client_addr,
+                    &client_len);
+
+    int flags = fcntl(client, F_GETFL, 0);
+    if(flags == -1)
+    {
+        perror(strerror(errno));
+        close(client);
+        return;
+    }
+
+    if(fcntl(client, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
+        perror(strerror(errno));
+        close(client);
+        return;
+    }
+
+    //fprintf(stderr, "Got new client!\n");
+    if (client < 0) {
+        //fprintf(stderr, "Something went wrong while accepting the client!\n");
+        exit(1);
+    }
+    //fprintf(stderr, "allocationg new client with fd %d\n", client);
+    struct Client* new_client = malloc(sizeof(struct Client));
+    if(!new_client) {
+        perror(strerror(errno));
+        exit(1);
+    }
+    new_client->next = NULL;
+    new_client->sent = 0;
+    new_client->fbe = cur_frame;
+    new_client->frame_id = cur_frame->id;
+    new_client->skipped_frames = 0;
+    struct Client* cur_client = head_client;
+    while (cur_client->next != NULL) { // get the last client struct
+        cur_client = cur_client->next;
+    }
+    new_client->sock = client;
+    //fprintf(stderr, "adding new client\n");
+    cur_client->next = new_client;
+    new_client->prev = cur_client;
+    //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
+    fprintf(stderr, "Client %d connected, clients: %d\n",
+            new_client->sock, ++client_count);
+    read(client, buffer, DUMMY_BUFSIZE); // lawl we don't really care...
+    ssize_t n = write(client,
+                      "HTTP/1.1 200 OK\r\n\r\n", 19);
+                      //icy-metaint: 8192\r\n\r\n", 38);
+    if (n < 0) {
+        remove_client(new_client);
+        //fprintf(stderr, "Life is pointless because errno: %d\n", errno);
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 1) {
         //fprintf(stderr, "NO U >:V giev host and port\n");
@@ -211,62 +275,8 @@ int main(int argc, char *argv[]) {
             //fprintf(stderr, "select() failed, abandon process!\n");
             exit(1);
         } else if (retval) {
-            client_len = sizeof(client_addr);
-            if (FD_ISSET(server, &rfds)) { // add client
-                client = accept(server, (struct sockaddr*) &client_addr,
-                            &client_len);
+            if (FD_ISSET(server, &rfds)) clientloop(server, head_client, cur_frame);
 
-                int flags = fcntl(client, F_GETFL, 0);
-                if(flags == -1)
-                {
-                    perror(strerror(errno));
-                    close(client);
-                    continue;
-                }
-
-                if(fcntl(client, F_SETFL, flags | O_NONBLOCK) == -1)
-                {
-                    perror(strerror(errno));
-                    close(client);
-                    continue;
-                }
-
-                //fprintf(stderr, "Got new client!\n");
-                if (client < 0) {
-                    //fprintf(stderr, "Something went wrong while accepting the client!\n");
-                    exit(1);
-                }
-                //fprintf(stderr, "allocationg new client with fd %d\n", client);
-                struct Client* new_client = malloc(sizeof(struct Client));
-                if(!new_client) {
-                    perror(strerror(errno));
-                    exit(1);
-                }
-                new_client->next = NULL;
-                new_client->sent = 0;
-                new_client->fbe = cur_frame;
-                new_client->frame_id = cur_frame->id;
-                new_client->skipped_frames = 0;
-                struct Client* cur_client = head_client;
-                while (cur_client->next != NULL) { // get the last client struct
-                    cur_client = cur_client->next;
-                }
-                new_client->sock = client;
-                //fprintf(stderr, "adding new client\n");
-                cur_client->next = new_client;
-                new_client->prev = cur_client;
-                //fprintf(stderr, "added new client! %p ->* %p -> next (new client) %p\n", head_client, cur_client, new_client);
-                fprintf(stderr, "Client %d connected, clients: %d\n",
-                                            new_client->sock, ++client_count);
-                read(client, buffer, BUFSIZE); // lawl we don't really care...
-                ssize_t n = write(client,
-                            "HTTP/1.1 200 OK\r\n\r\n", 19);
-                            //icy-metaint: 8192\r\n\r\n", 38);
-                if (n < 0) {
-                    remove_client(new_client);
-                    //fprintf(stderr, "Life is pointless because errno: %d\n", errno);
-                }
-            }
             if (FD_ISSET(mp3_stream, &rfds)) { // can read mp3_stream
                 if(!add_frame(mp3_stream, cur_frame)) { // frame is NULL --> EOF
                     clear_FB(cur_frame);
