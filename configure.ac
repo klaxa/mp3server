@@ -26,6 +26,8 @@ AC_CANONICAL_HOST
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+AC_TYPE_INT8_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
@@ -73,8 +75,11 @@ fi
 
 # Checks for library functions.
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset select strerror])
+AC_CHECK_FUNCS([accept fcntl getaddrinfo memset select setsockopt socket strerror])
+AC_SEARCH_LIBS([accept], [socket])
+AC_SEARCH_LIBS([getaddrinfo], [socket])
 AC_SEARCH_LIBS([socket], [socket])
+AC_SEARCH_LIBS([setsockopt], [socket])
 
 # required system services
 AC_SYS_LARGEFILE
