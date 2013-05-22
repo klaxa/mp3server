@@ -55,7 +55,7 @@ struct Frame* get_frame(int fd) {
     //    //fprintf(stderr, "Getting next header\n");
     //    header = read_header(fd);
     //}
-    print_info(header);
+    //print_info(header);
     size_t frame_length = get_frame_length(header);
     struct Frame* frame = malloc(sizeof(struct Frame));
 
