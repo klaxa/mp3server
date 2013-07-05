@@ -23,7 +23,7 @@ AC_CANONICAL_HOST
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h sys/time.h unistd.h getopt.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -74,7 +74,7 @@ then
 fi
 
 # Checks for library functions.
-AC_CHECK_FUNCS([accept fcntl getaddrinfo memset select setsockopt socket strerror])
+AC_CHECK_FUNCS([accept fcntl getaddrinfo memset select setsockopt socket strerror getopt_long])
 AC_SEARCH_LIBS([accept], [socket])
 AC_SEARCH_LIBS([getaddrinfo], [socket])
 AC_SEARCH_LIBS([socket], [socket])

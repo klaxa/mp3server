@@ -5,7 +5,9 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <unistd.h>
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -135,6 +137,7 @@ int main(int argc, char *argv[]) {
     struct addrinfo hints, *res;
     char port_str[5];
     int c, error = 0, option_index = 0;
+#ifdef HAVE_GETOPT_LONG
     struct option long_options[] = {
         {"v4only", no_argument, &v4only, 1},
         {"v6only", no_argument, &v6only, 1},
@@ -142,10 +145,15 @@ int main(int argc, char *argv[]) {
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
+#endif
 
     while(1) {
+#ifdef HAVE_GETOPT_LONG
         c = getopt_long(argc, argv, "46Vh",
                 long_options, &option_index);
+#else
+	c = getopt(argc, argv, "46Vh");
+#endif
         if(c == -1)
             break;
 
