@@ -74,7 +74,6 @@ then
 fi
 
 # Checks for library functions.
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([accept fcntl getaddrinfo memset select setsockopt socket strerror])
 AC_SEARCH_LIBS([accept], [socket])
 AC_SEARCH_LIBS([getaddrinfo], [socket])
