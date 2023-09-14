@@ -211,7 +211,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (!v4only && (server6 = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
-        if(errno != EAFNOSUPPORT && errno != EPFNOSUPPORT) {
+        if(errno != EAFNOSUPPORT
+#ifdef EPFNOSUPPORT
+	 && errno != EPFNOSUPPORT
+#endif
+		) {
             perror(strerror(errno));
             exit(1);
         }
@@ -220,7 +224,11 @@ int main(int argc, char *argv[]) {
     }
 
     if(!v6only && (server4 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        if(errno != EAFNOSUPPORT && errno != EPFNOSUPPORT) {
+        if(errno != EAFNOSUPPORT
+#ifdef EPFNOSUPPORT
+	 && errno != EPFNOSUPPORT
+#endif
+	) {
             perror(strerror(errno));
             exit(1);
         }
