@@ -1,15 +1,15 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
-AC_INIT([mp3server], [0.2])
+AC_PREREQ([2.71])
+AC_INIT([mp3server],[0.2])
 AC_CONFIG_SRCDIR([mp3split.h])
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign 1.11 dist-bzip2 tar-ustar])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_CC_C99
+AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
@@ -83,4 +83,5 @@ AC_SEARCH_LIBS([setsockopt], [socket])
 # required system services
 AC_SYS_LARGEFILE
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
