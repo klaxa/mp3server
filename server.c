@@ -24,6 +24,10 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 unsigned int client_count = 0;
 
 
